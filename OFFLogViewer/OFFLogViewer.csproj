@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>OFF.LogViewer</RootNamespace>
+    <Authors>OFFOSORG</Authors>
+    <PackageLicenseFile>Apache License 2.0.txt</PackageLicenseFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Copyright>OFFOSORG</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\_Data\Licenses\Apache License 2.0.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.95.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OFFLogger\OFFLogger.csproj" />
+  </ItemGroup>
+
+</Project>

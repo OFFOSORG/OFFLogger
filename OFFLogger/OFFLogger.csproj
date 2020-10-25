@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>OFF.Logger</RootNamespace>
+    <Authors>OFFOSORG</Authors>
+    <Company />
+    <Description>Необходимое для логирования от OFFOSORG</Description>
+    <Copyright>OFFOSORG</Copyright>
+    <PackageLicenseFile>Apache License 2.0.txt</PackageLicenseFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\_Data\Licenses\Apache License 2.0.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
