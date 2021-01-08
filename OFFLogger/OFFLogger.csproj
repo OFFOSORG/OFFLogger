@@ -12,6 +12,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <OutputType>Library</OutputType>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
