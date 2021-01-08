@@ -137,7 +137,7 @@ namespace OFF.LogViewer.Forms
             dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgv.DefaultCellStyle = dataGridViewCellStyle3;
-            this.dgv.Location = new System.Drawing.Point(0, 196);
+            this.dgv.Location = new System.Drawing.Point(0, 191);
             this.dgv.MultiSelect = false;
             this.dgv.Name = "dgv";
             dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
@@ -155,7 +155,7 @@ namespace OFF.LogViewer.Forms
             this.dgv.RowTemplate.DefaultCellStyle.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
             this.dgv.RowTemplate.DefaultCellStyle.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgv.RowTemplate.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.dgv.Size = new System.Drawing.Size(784, 344);
+            this.dgv.Size = new System.Drawing.Size(784, 349);
             this.dgv.TabIndex = 0;
             this.dgv.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgv_CellClick);
             // 

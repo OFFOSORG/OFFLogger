@@ -10,6 +10,7 @@ using OFF.Logger.Enums;
 
 namespace OFF.Logger.Entities
 {
+
     /// <summary>
     ///     Логируемое сообщение
     /// </summary>
@@ -17,14 +18,16 @@ namespace OFF.Logger.Entities
     {
         #region Static Fields
 
-        /// <summary>
-        /// Формат отметки времени
-        /// </summary>
-        public const string TimestampFormat = "yyyy.MM.dd HH:mm:ss.FFFK";
+        private static string _timestampFormat;
 
         #endregion
 
         #region Constructors
+
+        /// <summary>
+        ///     Сбрасываем формат отметки времени.
+        /// </summary>
+        static LogMessage() => TimestampFormat = null;
 
         /// <summary>
         ///     Создает логируемое сообщение
@@ -37,7 +40,8 @@ namespace OFF.Logger.Entities
         /// <param name="typeObject">Тип объекта, в котором было послано сообщение</param>
         /// <param name="memberName">Название метода или свойства, которое послало сообщение</param>
         [JsonConstructor]
-        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text, ExceptionInfo exception, string typeObject, string memberName)
+        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text, ExceptionInfo exception,
+            string typeObject, string memberName)
         {
             Timestamp = timestamp;
             Level = level;
@@ -58,7 +62,8 @@ namespace OFF.Logger.Entities
         /// <param name="exception">Исключение, сопровождаемое вместе с сообщением</param>
         /// <param name="typeObject">Тип объекта, в котором было послано сообщение</param>
         /// <param name="memberName">Название метода или свойства, которое послало сообщение</param>
-        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text, Exception exception, Type typeObject, string memberName)
+        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text, Exception exception,
+            Type typeObject, string memberName)
         {
             Timestamp = timestamp;
             Level = level;
@@ -79,10 +84,8 @@ namespace OFF.Logger.Entities
         /// <param name="level">Важность сообщения</param>
         /// <param name="threadId">Идентификатор потока, в котором было послано сообщение</param>
         /// <param name="text">Текст сообщения</param>
-        /// 
         public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text) :
-            this(timestamp, level, threadId, text, (ExceptionInfo) null, null, null)
-        { }
+            this(timestamp, level, threadId, text, (ExceptionInfo) null, null, null) { }
 
         /// <summary>
         ///     Создает логируемое сообщение
@@ -91,10 +94,8 @@ namespace OFF.Logger.Entities
         /// <param name="level">Важность сообщения</param>
         /// <param name="threadId">Идентификатор потока, в котором было послано сообщение</param>
         /// <param name="exception">Исключение, сопровождаемое вместе с сообщением</param>
-        /// 
         public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, Exception exception) :
-            this(timestamp, level, threadId, null, exception, null, null)
-        { }
+            this(timestamp, level, threadId, null, exception, null, null) { }
 
         /// <summary>
         ///     Создает логируемое сообщение
@@ -104,10 +105,8 @@ namespace OFF.Logger.Entities
         /// <param name="threadId">Идентификатор потока, в котором было послано сообщение</param>
         /// <param name="text">Текст сообщения</param>
         /// <param name="exception">Исключение, сопровождаемое вместе с сообщением</param>
-        /// 
         public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text, Exception exception) :
-            this(timestamp, level, threadId, text, exception, null, null)
-        { }
+            this(timestamp, level, threadId, text, exception, null, null) { }
 
         /// <summary>
         ///     Создает логируемое сообщение
@@ -118,10 +117,9 @@ namespace OFF.Logger.Entities
         /// <param name="text">Текст сообщения</param>
         /// <param name="typeObject">Тип объекта, в котором было послано сообщение</param>
         /// <param name="memberName">Название метода или свойства, которое послало сообщение</param>
-        /// 
-        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text, Type typeObject, string memberName) :
-            this(timestamp, level, threadId, text, null, typeObject, memberName)
-        { }
+        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, string text, Type typeObject,
+            string memberName) :
+            this(timestamp, level, threadId, text, null, typeObject, memberName) { }
 
         /// <summary>
         ///     Создает логируемое сообщение
@@ -132,14 +130,22 @@ namespace OFF.Logger.Entities
         /// <param name="exception">Исключение, сопровождаемое вместе с сообщением</param>
         /// <param name="typeObject">Тип объекта, в котором было послано сообщение</param>
         /// <param name="memberName">Название метода или свойства, которое послало сообщение</param>
-        /// 
-        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, Exception exception, Type typeObject, string memberName) :
-            this(timestamp, level, threadId, null, exception, typeObject, memberName)
-        { }
+        public LogMessage(DateTime timestamp, LoggingLevel level, int threadId, Exception exception, Type typeObject,
+            string memberName) :
+            this(timestamp, level, threadId, null, exception, typeObject, memberName) { }
 
         #endregion
 
         #region Properties
+
+        /// <summary>
+        ///     Формат отметки времени. По умолчанию ISO 8601.
+        /// </summary>
+        public static string TimestampFormat
+        {
+            get => _timestampFormat;
+            set => _timestampFormat = value ?? "O";
+        }
 
         /// <summary>
         ///     Отметка времени
@@ -162,14 +168,14 @@ namespace OFF.Logger.Entities
         public int ThreadId { get; }
 
         /// <summary>
-        /// Полное имя типа объекта, в котором было послано сообщение
+        ///     Полное имя типа объекта, в котором было послано сообщение
         /// </summary>
         [JsonPropertyName("Type")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string TypeObject { get; }
 
         /// <summary>
-        /// Название метода или свойства, которое послало сообщение
+        ///     Название метода или свойства, которое послало сообщение
         /// </summary>
         [JsonPropertyName("Member")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -183,7 +189,7 @@ namespace OFF.Logger.Entities
         public string Text { get; }
 
         /// <summary>
-        /// Исключение, сопровождаемое вместе с сообщением
+        ///     Исключение, сопровождаемое вместе с сообщением
         /// </summary>
         [JsonPropertyName("Exc")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -223,4 +229,5 @@ namespace OFF.Logger.Entities
 
         #endregion
     }
+
 }

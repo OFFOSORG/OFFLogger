@@ -13,6 +13,8 @@ namespace OFF.LogViewer.Common
     {
         #region Static Fields
 
+        // ReSharper disable once InconsistentNaming
+        // ReSharper disable once IdentifierTypo
         private const int WM_SETREDRAW = 11;
 
         #endregion
@@ -47,15 +49,9 @@ namespace OFF.LogViewer.Common
             }
         }
 
-        public static void BeginInit(this DataGridView dgv)
-        {
-            ((ISupportInitialize) dgv).BeginInit();
-        }
+        public static void BeginInit(this DataGridView dgv) => ((ISupportInitialize) dgv).BeginInit();
 
-        public static void EndInit(this DataGridView dgv)
-        {
-            ((ISupportInitialize) dgv).EndInit();
-        }
+        public static void EndInit(this DataGridView dgv) => ((ISupportInitialize) dgv).EndInit();
 
         /// <summary>
         ///     Преобразует значение объекта изменяемой строки в обычную без последнего перехода на новую строку.

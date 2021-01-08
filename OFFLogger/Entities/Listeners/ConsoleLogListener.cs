@@ -17,11 +17,10 @@ namespace OFF.Logger.Entities.Listeners
         /// <summary>
         ///     Создает исполнителя логирования в консоль
         /// </summary>
-        public ConsoleLogListener()
-        {
+        public ConsoleLogListener() =>
+
             //Делаем пробную запись
             Log(string.Empty);
-        }
 
         #endregion
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -9,7 +10,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using OFF.Logger.Entities.Listeners;
 using OFF.Logger.Entities.Loggers;
-using OFF.Logger.Enums;
 using OFF.LogViewer.Forms;
 
 namespace OFF.LogViewer.Common
@@ -160,12 +160,55 @@ namespace OFF.LogViewer.Common
             }
         }
 
+        //public static record MyRecord(int i, int j);
+
         /// <summary>
         ///     Главная точка входа для приложения.
         /// </summary>
         [STAThread]
         private static void Main()
         {
+            //List<DateTime> datesList = new()
+            //{
+            //    new DateTime(2020, 10, 01),
+            //    new DateTime(2020, 10, 02),
+            //    new DateTime(2020, 10, 03),
+            //    new DateTime(2020, 10, 04),
+            //    new DateTime(2020, 10, 05)
+            //};
+
+            //var matrix = new int[10, 10];
+
+            //JsonSerializerOptions options = new JsonSerializerOptions
+            //{
+            //    WriteIndented = true
+            //};
+
+            //string json = JsonSerializer.Serialize(matrix, options);
+
+            //var jaggedArray = new int[5][];
+
+            //for (int i = 0; i < 5; i++)
+            //    jaggedArray[i] = new int[5];
+
+            //var json = JsonSerializer.Serialize(jaggedArray);
+
+            //var options = new JsonSerializerOptions();
+            //options.Converters.Add(new JsonMatrixConverter<int>());
+
+            //var matrix = new Matrix<int>() {Data = new int[10, 10]};
+
+            //json = JsonSerializer.Serialize(matrix, options);
+
+            //var array = JsonSerializer.Deserialize<Matrix<int>>(json, options);
+
+            //var json =
+            //    "[[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]";
+
+            //var array = JsonSerializer.Deserialize<int[][]>(json);
+
+            //LogMessage.TimestampFormat = "yyyy/MM/dd";
+
             if (!IsFirstRunApplication())
             {
                 Show($@"Программа {Name} уже запущена! Повторный запуск проигнорирован...");
@@ -191,6 +234,9 @@ namespace OFF.LogViewer.Common
             logger.Start();
             logger.Info($"Запуск программы {FullName}", TypeObject);
 
+            //Фиксируем логгер
+            G.Logger = logger;
+
             Application.Run(new MainForm());
         }
 
@@ -198,22 +244,16 @@ namespace OFF.LogViewer.Common
         ///     Отображает текст на экране различную информацию с подтверждением пользователем.
         /// </summary>
         /// <param name="message">Отображаемый текст.</param>
-        public static void Show(string message)
-        {
+        public static void Show(string message) =>
             MessageBox.Show(message, @"Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            //TODO привязаться к OFFUtils
-            //var messageBox = new MessageBoxLogger();
-
-            //messageBox.Log(level, message);
-
-            //Console.WriteLine(text);
-
-            //Console.Write("Нажмите для продолжения...");
-            //if (Console.ReadKey().Key != ConsoleKey.Enter)
-            //    Console.WriteLine();
-        }
-
+        //TODO привязаться к OFFUtils
+        //var messageBox = new MessageBoxLogger();
+        //messageBox.Log(level, message);
+        //Console.WriteLine(text);
+        //Console.Write("Нажмите для продолжения...");
+        //if (Console.ReadKey().Key != ConsoleKey.Enter)
+        //    Console.WriteLine();
         /// <summary>
         ///     Завершает работу компонентов программы.
         /// </summary>
@@ -351,7 +391,7 @@ namespace OFF.LogViewer.Common
         /// <returns></returns>
         private static bool OnConsoleCtrlChange(CtrlType ctrlType)
         {
-            string text = ctrlType switch
+            var text = ctrlType switch
             {
                 CtrlType.CTRL_C_EVENT => "Был получен сигнал \"Ctrl + C\". Необходимо завершить работу программы.",
                 CtrlType.CTRL_BREAK_EVENT =>

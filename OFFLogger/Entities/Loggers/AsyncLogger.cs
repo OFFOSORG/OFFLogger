@@ -29,17 +29,6 @@ namespace OFF.Logger.Entities.Loggers
 
         #endregion
 
-        #region Properties
-
-        /// <summary>
-        ///     Буфер сообщений (очередь логирования)
-        /// </summary>
-        public BlockingCollection<LogMessage> PendingMessages { get; private set; }
-
-        public LoggingLevel Level { get; set; }
-
-        #endregion
-
         #region Interfaces
 
         public void Dispose()
@@ -50,6 +39,8 @@ namespace OFF.Logger.Entities.Loggers
                 PendingMessages = null;
             }
         }
+
+        public LoggingLevel Level { get; set; }
 
         public void Trace(string message) => Push(LoggingLevel.Trace, message);
 
@@ -146,6 +137,15 @@ namespace OFF.Logger.Entities.Loggers
         public void Fatal(string message, Exception exception, Type typeObject,
             [CallerMemberName] string memberName = null) =>
             Push(LoggingLevel.Fatal, message, exception, typeObject, memberName);
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        ///     Буфер сообщений (очередь логирования)
+        /// </summary>
+        public BlockingCollection<LogMessage> PendingMessages { get; private set; }
 
         #endregion
 

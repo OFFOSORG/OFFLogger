@@ -5,7 +5,6 @@ using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Unicode;
 
 #endregion
 
@@ -41,7 +40,7 @@ namespace OFF.Logger.Entities.Listeners
         /// <summary>
         ///     Блокировщик кода по работе с файловым потоком
         /// </summary>
-        protected readonly object FileStreamLocker = new object();
+        protected readonly object FileStreamLocker = new();
 
         private string _logFolderPath;
 
@@ -106,112 +105,24 @@ namespace OFF.Logger.Entities.Listeners
             //Устанавливаем по умолчанию максимальный размер файла - 100МБ, на случай будущего включения
             MaximumFileSize = 100 * 1024 * 1024;
 
-            //Задаем в настройках сериализации флаг переноса строк
+            //Используемый в сообщениях формат дата-времени
+            var format = LogMessage.TimestampFormat;
+
             JsonSerializerOptions = new JsonSerializerOptions
             {
+                //Перенос по строкам
                 WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+
+                //Выключаем экранирование спец символов
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+
+                //Используем пользовательский конвертер дат
+                Converters = {new CustomDateTimeConverter(format)}
             };
 
             //Делаем пробную запись
             Log(string.Empty);
         }
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        ///     Путь к каталогу лог-файлов
-        /// </summary>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="DirectoryNotFoundException"></exception>
-        public string LogFolderPath
-        {
-            get => _logFolderPath;
-            set => _logFolderPath = GetFolderPath(value);
-        }
-
-        /// <summary>
-        ///     Путь лог-файла
-        /// </summary>
-        public string LogFilePath { get; private set; }
-
-        /// <summary>
-        ///     Последняя дата обновления файла лога
-        /// </summary>
-        public DateTime LastDateTime { get; private set; }
-
-        /// <summary>
-        ///     Последнее актуальное время, от которого работает исполнитель
-        /// </summary>
-        public TimeSpan LastActualTime { get; private set; }
-
-        /// <summary>
-        ///     Временной интервал лог-файлов
-        /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public TimeSpan LogTimeInterval
-        {
-            get => _logTimeInterval;
-            set
-            {
-                //Всего секунд в задаваемом интервале
-                var totalSeconds = value.TotalSeconds;
-
-                //Валидируем значение
-                if (totalSeconds < MinTimeInterval || totalSeconds > MaxTimeInterval)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value,
-                        $"Временной интервал должен принадлежать суточному диапазону секунд [{MinTimeInterval}, {MaxTimeInterval}].");
-                }
-
-                if (_logTimeInterval != value)
-                {
-                    _logTimeInterval = value;
-
-                    //Осущуствляем пересчет в секунды сразу по изменении интервала (вместо постоянного пересчета)
-                    LogTimeIntervalInSeconds = (int) Math.Round(value.TotalSeconds);
-
-                    //Необходимо обновить файловый поток
-                    NeedNewFileStream = true;
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Временной интервал лог-файлов в секундах
-        /// </summary>
-        public int LogTimeIntervalInSeconds { get; private set; }
-
-        /// <summary>
-        ///     Режим ограничения максимального размера файла логов
-        /// </summary>
-        public bool MaximumFileSizeMode
-        {
-            get => _maximumFileSizeMode;
-            set
-            {
-                if (_maximumFileSizeMode != value)
-                {
-                    _maximumFileSizeMode = value;
-
-                    //Необходимо обновить файловый поток
-                    NeedNewFileStream = true;
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Максимальный размера файла логов в режиме ограничения по размеру (в байтах)
-        /// </summary>
-        public long MaximumFileSize { get; set; }
-
-        /// <summary>
-        ///     Необходимо производить опустошение буферов ОС в файл с каждым сообщением? (иначе ОС обновил данные файла при
-        ///     обращении к нему или закрытии потока)
-        /// </summary>
-        public bool AutoFlush { get; set; }
 
         #endregion
 
@@ -358,7 +269,12 @@ namespace OFF.Logger.Entities.Listeners
             }
         }
 
-        public void Log(LogMessage message) => Log(JsonSerializer.Serialize(message, JsonSerializerOptions));
+        public void Log(LogMessage message)
+        {
+            var text = JsonSerializer.Serialize(message, JsonSerializerOptions);
+
+            Log(text);
+        }
 
         public void OnClose()
         {
@@ -375,6 +291,102 @@ namespace OFF.Logger.Entities.Listeners
                 }
             }
         }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        ///     Путь к каталогу лог-файлов
+        /// </summary>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="DirectoryNotFoundException"></exception>
+        public string LogFolderPath
+        {
+            get => _logFolderPath;
+            set => _logFolderPath = GetFolderPath(value);
+        }
+
+        /// <summary>
+        ///     Путь лог-файла
+        /// </summary>
+        public string LogFilePath { get; private set; }
+
+        /// <summary>
+        ///     Последняя дата обновления файла лога
+        /// </summary>
+        public DateTime LastDateTime { get; private set; }
+
+        /// <summary>
+        ///     Последнее актуальное время, от которого работает исполнитель
+        /// </summary>
+        public TimeSpan LastActualTime { get; private set; }
+
+        /// <summary>
+        ///     Временной интервал лог-файлов
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public TimeSpan LogTimeInterval
+        {
+            get => _logTimeInterval;
+            set
+            {
+                //Всего секунд в задаваемом интервале
+                var totalSeconds = value.TotalSeconds;
+
+                //Валидируем значение
+                if (totalSeconds < MinTimeInterval || totalSeconds > MaxTimeInterval)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value,
+                        $"Временной интервал должен принадлежать суточному диапазону секунд [{MinTimeInterval}, {MaxTimeInterval}].");
+                }
+
+                if (_logTimeInterval != value)
+                {
+                    _logTimeInterval = value;
+
+                    //Осущуствляем пересчет в секунды сразу по изменении интервала (вместо постоянного пересчета)
+                    LogTimeIntervalInSeconds = (int) Math.Round(value.TotalSeconds);
+
+                    //Необходимо обновить файловый поток
+                    NeedNewFileStream = true;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Временной интервал лог-файлов в секундах
+        /// </summary>
+        public int LogTimeIntervalInSeconds { get; private set; }
+
+        /// <summary>
+        ///     Режим ограничения максимального размера файла логов
+        /// </summary>
+        public bool MaximumFileSizeMode
+        {
+            get => _maximumFileSizeMode;
+            set
+            {
+                if (_maximumFileSizeMode != value)
+                {
+                    _maximumFileSizeMode = value;
+
+                    //Необходимо обновить файловый поток
+                    NeedNewFileStream = true;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Максимальный размера файла логов в режиме ограничения по размеру (в байтах)
+        /// </summary>
+        public long MaximumFileSize { get; set; }
+
+        /// <summary>
+        ///     Необходимо производить опустошение буферов ОС в файл с каждым сообщением? (иначе ОС обновил данные файла при
+        ///     обращении к нему или закрытии потока)
+        /// </summary>
+        public bool AutoFlush { get; set; }
 
         #endregion
 

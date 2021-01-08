@@ -22,7 +22,7 @@ namespace OFF.Logger.Entities.Dispatchers
         /// <summary>
         ///     Синхронизатор работы со списком исполнителей логирования.
         /// </summary>
-        public readonly object ListenersLocker = new object();
+        public readonly object ListenersLocker = new();
 
         /// <summary>
         ///     Буфер сообщений.

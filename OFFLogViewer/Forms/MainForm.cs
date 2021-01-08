@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Windows.Forms;
 using ClosedXML.Excel;
@@ -77,6 +78,11 @@ namespace OFF.LogViewer.Forms
         private readonly DataTable _dataTable;
 
         /// <summary>
+        ///     Настройки десериализации json.
+        /// </summary>
+        private readonly JsonSerializerOptions _jsonSerializerOptions;
+
+        /// <summary>
         ///     Операторы над числами
         /// </summary>
         private readonly string[] _numberOperators = {NoOperator, "=", "<>", "<", "<=", ">=", ">"};
@@ -99,7 +105,7 @@ namespace OFF.LogViewer.Forms
         /// <summary>
         ///     Эквиваленты операторов на SQL для строк
         /// </summary>
-        private readonly Dictionary<string, string> _stringSqlOperators = new Dictionary<string, string>
+        private readonly Dictionary<string, string> _stringSqlOperators = new()
         {
             {"=", "LIKE"},
             {"<>", "NOT LIKE"}
@@ -133,6 +139,24 @@ namespace OFF.LogViewer.Forms
                 OverwritePrompt = true
 
                 //RestoreDirectory = true,
+            };
+
+            //Используемый в сообщениях формат дата-времени
+            var format = LogMessage.TimestampFormat;
+
+            //Старый формат, используемый в логах, для считывания
+            //format = "yyyy.MM.dd HH:mm:ss.FFFK";
+
+            _jsonSerializerOptions = new JsonSerializerOptions
+            {
+                //Перенос по строкам
+                WriteIndented = true,
+
+                //Выключаем экранирование спец символов
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+
+                //Используем пользовательский конвертер дат
+                Converters = {new CustomDateTimeConverter(format)}
             };
 
             //var logMessages = new List<LogMessage>();
@@ -408,6 +432,8 @@ namespace OFF.LogViewer.Forms
             //    G.Logger.Info($"test_{i}");
             //}
 
+            Text = $@"LogViewer: {path}";
+
             b.Enabled = true;
 
             //Разрешаем фильтрацию
@@ -423,6 +449,139 @@ namespace OFF.LogViewer.Forms
             //logMessages.ForEach(AddMessage);
         }
 
+        /// <summary>
+        /// Разделяет строку на блоки указанной длины.
+        /// </summary>
+        /// <param name="text">Строка, которую нужно разделить</param>
+        /// <param name="blockLength">Длина блоков</param>
+        private static IList<string> Divider(string text, int blockLength)
+        {
+            if (blockLength <= 0)
+                throw new ArgumentOutOfRangeException(nameof(blockLength));
+
+            //Если строки нет, то возвращаем один пустой элемент
+            if (text == null)
+                return new string[] { null };
+
+            var length = text.Length;
+
+            //Если один блок умещает в себе весь текст, то не проводим никаких преобразований
+            if (blockLength >= length)
+                return new[] { text };
+
+            var blocks = new List<string>(length / blockLength + 1);
+
+            //Разбиваем на блоки
+            for (var i = 0; i < length; i += blockLength)
+            {
+                var remaining = length - i;
+
+                //var t = remaining > blockLength ?
+                //    text.Substring(i, blockLength) :
+                //    text.Substring(i, remaining) + new string('\0', blockLength - remaining);
+
+                var t = text.Substring(i, remaining > blockLength ? blockLength : remaining);
+                blocks.Add(t);
+            }
+            return blocks;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        private static IList<string> GetSplitTextForExcel(string text)
+        {
+            var list = new List<string>();
+
+            //Если текста нет, то возвращаем один отсутствующий элемент
+            if (text == null)
+            {
+                list.Add(null);
+
+                return list;
+            }
+
+            //Максимальное количество символов в ячейке Эксель
+            const int maxCountCharsInCell = 32767;
+
+            //Максимальное количество переносов строки в ячейке Эксель
+            const int maxCountNewlinesInCell = 253;
+
+            //Избавляемся от переноса каретки, поскольку Alt+Enter в Excel использует лишь \n
+            text = text.Replace("\r", string.Empty);
+
+            //Делим строку на несколько по символу переноса строки
+            var splitText = text.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var nSplitText = splitText.Length;
+
+            //Буфер строки
+            var sb = new StringBuilder();
+            var newlinesCount = 0;
+
+            //Очищает буфер строки
+            void ResetBuffer()
+            {
+                sb.Clear();
+                newlinesCount = 0;
+            }
+
+            //Добавляет строку в буфер
+            void AppendLine(string lineText)
+            {
+                sb.Append($"{lineText}\n");
+                newlinesCount++;
+            }
+
+            //Проходим по каждой строке
+            for (var i = 0; i < nSplitText; i++)
+            {
+                var t = splitText[i];
+                var tLength = t.Length;
+
+                var sbLength = sb.Length;
+
+                //Если при добавлении новой строки количество символов в ячейке превысит допустимые значения, то создаем новую ячейку
+                if (sbLength != 0 && sbLength + tLength + 1 > maxCountCharsInCell)
+                {
+                    list.Add(sb.ToStringWithoutLastNewLine());
+
+                    //Очищаем буфер для новой строки
+                    ResetBuffer();
+                }
+
+                //Если количество символов в строке больше максимального количества, то необходимо строку дробить
+                if (tLength > maxCountCharsInCell)
+                {
+                    //Дробим строку
+                    var divText = Divider(t, maxCountCharsInCell);
+
+                    //Раскладываем разбитые строки в новые ячейки
+                    list.AddRange(divText);
+                }
+
+                //Иначе добавляем строку в буфер
+                else
+                    AppendLine(t);
+
+                //Если достигнуто максимальное количество переносов строк, то переходим на следующую ячейку
+                if (newlinesCount == maxCountNewlinesInCell)
+                {
+                    list.Add(sb.ToStringWithoutLastNewLine());
+
+                    //Очищаем буфер для новой строки
+                    ResetBuffer();
+                }
+            }
+
+            //Если в буфере еще что-то осталось, то переносим это в ячейку
+            if (sb.Length != 0)
+                list.Add(sb.ToStringWithoutLastNewLine());
+
+            return list;
+        }
+
         public void AddMessage(LogMessage logMessage)
         {
             var level = logMessage.Level /*.ToString()*/;
@@ -435,7 +594,11 @@ namespace OFF.LogViewer.Forms
             var exceptionInfo = e?.GetDetails();
             var exception = e?.Message;
 
-            _dataTable.Rows.Add(level, threadId, timestamp, typeObject, memberName, text, exception, exceptionInfo);
+            var splitText = GetSplitTextForExcel(text);
+
+            //Распихиваем каждую полученную строку в таблицу
+            foreach (var s in splitText)
+                _dataTable.Rows.Add(level, threadId, timestamp, typeObject, memberName, s, exception, exceptionInfo);
         }
 
         private void bw_DoWork(object sender, DoWorkEventArgs e)
@@ -480,7 +643,7 @@ namespace OFF.LogViewer.Forms
 
                 try
                 {
-                    AddMessage(JsonSerializer.Deserialize<LogMessage>(sb.ToString()));
+                    AddMessage(JsonSerializer.Deserialize<LogMessage>(sb.ToString(), _jsonSerializerOptions));
                     GoodCount++;
                 }
                 catch (Exception exc)
@@ -513,14 +676,54 @@ namespace OFF.LogViewer.Forms
         }
 
         /// <summary>
+        /// Возвращает допустипую для LIKE поиска SQL строку.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static string EscapeLikeValue(string value)
+        {
+            var sb = new StringBuilder();
+
+            foreach (var c in value)
+            {
+                switch (c)
+                {
+                    case '*':
+                    case '%':
+                    case '[':
+                    case ']':
+                        sb.Append('[').Append(c).Append(']');
+
+                        break;
+
+                    case '\'':
+                        sb.Append("''");
+
+                        break;
+
+                    default:
+                        sb.Append(c);
+
+                        break;
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
         ///     Возвращает часть сравнения для строк
         /// </summary>
         /// <param name="header">Заголовок</param>
         /// <param name="sqlOperator">Оператор SQL</param>
         /// <param name="value">Значение</param>
         /// <returns></returns>
-        private static string GetSqlStringPart(string header, string sqlOperator, string value) =>
-            $"[{header}] {sqlOperator} '%{value}%'";
+        private static string GetSqlStringPart(string header, string sqlOperator, string value)
+        {
+            var likeValue = EscapeLikeValue(value);
+
+            return $"[{header}] {sqlOperator} '%{likeValue}%'";
+        }
 
         /// <summary>
         ///     Возвращает часть сравнения для целых чисел
@@ -819,6 +1022,20 @@ namespace OFF.LogViewer.Forms
             //Извлекаем подтаблицу из таблицы текущего вида
             var dt = _dataTable.DefaultView.ToTable(false, needColumnNames);
 
+            //Максимальное количество стро в таблице Excel
+            const int maxRowsCount = 1_048_576;
+
+            var dtRowsCount = dt.Rows.Count;
+
+            if (dtRowsCount > maxRowsCount)
+            {
+                MessageBox.Show(
+                    $"Невозможно сохранить {dtRowsCount} строк таблицы, поскольку Excel позволяет лишь {maxRowsCount}.",
+                    "Ошибка сохранения", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                return;
+            }
+
             //Заменяем в таблице числовые значения перечисления на текст
             ConvertEnumColumnToString(dt, LevelColumnName, typeof(LoggingLevel));
 
@@ -864,7 +1081,7 @@ namespace OFF.LogViewer.Forms
                 alignment.WrapText = true;
             }
 
-            //Строку заголовкой центрируем по центру
+            //Строку заголовков центрируем
             ws.Row(1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
             //Выравниваем все строки таблицы по содержимому

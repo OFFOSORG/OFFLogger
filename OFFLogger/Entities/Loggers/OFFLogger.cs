@@ -26,7 +26,7 @@ namespace OFF.Logger.Entities.Loggers
         /// <summary>
         ///     Блокировщик кода управления работой логгера
         /// </summary>
-        protected object Locker = new object();
+        protected object Locker = new();
 
         #endregion
 
@@ -59,6 +59,22 @@ namespace OFF.Logger.Entities.Loggers
             //Стартуем если автостарт включен
             if (autoStart)
                 Start();
+        }
+
+        #endregion
+
+        #region Interfaces
+
+        /// <summary>
+        ///     При удалении объекта останавливается работа логгера, чтобы сохранить данные.
+        ///     При закрытии программы может не справляться, поэтому необходимо прописывать самому
+        /// </summary>
+        public new void Dispose()
+        {
+            //Останавливаем работу до уничтожения буфера
+            Stop();
+
+            PendingMessages?.Dispose();
         }
 
         #endregion
@@ -102,22 +118,6 @@ namespace OFF.Logger.Entities.Loggers
         ///     Диспетчер завершил свою работу? (завершенный диспетчер нельзя повторно запустить)
         /// </summary>
         public bool IsCompleted => Dispatcher.IsCompleted;
-
-        #endregion
-
-        #region Interfaces
-
-        /// <summary>
-        ///     При удалении объекта останавливается работа логгера, чтобы сохранить данные.
-        ///     При закрытии программы может не справляться, поэтому необходимо прописывать самому
-        /// </summary>
-        public new void Dispose()
-        {
-            //Останавливаем работу до уничтожения буфера
-            Stop();
-
-            PendingMessages?.Dispose();
-        }
 
         #endregion
 
